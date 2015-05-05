@@ -14,7 +14,9 @@ public class HazelCastDistributedMap {
 
 		HazelcastInstance client = HazelCastFactory.getInstance();
 
-		IMap map = client.getMap("customers");
+		IMap<Long, Client> map = client.getMap("customers");
+
+		map.addEntryListener(new MyMapEntryListener(), true);
 
 		Client clientData = new Client();
 
@@ -40,6 +42,12 @@ public class HazelCastDistributedMap {
 
 		map.put(clientData.getPhone(), clientData, 120, TimeUnit.SECONDS);
 
+		clientData = (Client) map.get(33455676l);
+
+		clientData.setName("Alexandre Eleuterio Santos Lourenco UPDATED!");
+
+		map.put(clientData.getPhone(), clientData, 5, TimeUnit.MINUTES);
+
 		HazelCastFactory.shutDown();
 
 		client = HazelCastFactory.getInstance();
@@ -54,6 +62,23 @@ public class HazelCastDistributedMap {
 		}
 
 		System.out.println(mapPostShutDown.size());
+
+		IMap<Long, Client> mapProcessors = client.getMap("customers");
+
+		mapProcessors.executeOnEntries(new MyMapProcessor());
+
+		HazelCastFactory.shutDown();
+
+		client = HazelCastFactory.getInstance();
+
+		mapProcessors = client.getMap("customers");
+
+		for (Long phone : mapProcessors.keySet()) {
+			Client cli = mapProcessors.get(phone);
+
+			System.out.println(cli.getName() + " " + cli.getPhone());
+
+		}
 
 		HazelCastFactory.shutDown();
 
